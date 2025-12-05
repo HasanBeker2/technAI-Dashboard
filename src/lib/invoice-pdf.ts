@@ -116,7 +116,7 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
         <!DOCTYPE html>
         <html lang="de">
         <head>
-            <title>Rechnung ${invoice.invoiceNumber}</title>
+            <title>Rechnung_${invoice.invoiceNumber}_${invoice.client.name.replace(/\s+/g, '_')}</title>
             <style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
                 body { 
@@ -221,9 +221,10 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
                     display: flex;
                     justify-content: flex-end;
                     margin-bottom: 30px;
+                    margin-right: 12px;
                 }
                 .totals-box {
-                    width: 320px;
+                    width: 280px;
                 }
                 .totals-row {
                     display: flex;
@@ -264,7 +265,6 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
                     margin-top: 60px;
                     padding-top: 20px;
                     border-top: 1px solid #e5e7eb;
-                    text-align: center;
                     color: #9ca3af;
                     font-size: 12px;
                 }
@@ -308,7 +308,6 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
                         <h3>Rechnungsdetails</h3>
                         <p><strong>Rechnungsdatum:</strong> ${formatDate(invoice.issueDate)}</p>
                         <p><strong>Fälligkeitsdatum:</strong> ${formatDate(invoice.dueDate)}</p>
-                        ${invoice.project ? `<p><strong>Projekt:</strong> ${invoice.project.name}</p>` : ''}
                     </div>
                 </div>
 
@@ -350,21 +349,52 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
                 </div>
                 ` : ''}
 
-                ${invoice.servicePeriodStart && invoice.servicePeriodEnd ? `
-                <div class="notes" style="margin-top: 20px;">
-                    <h3>Leistungszeitraum</h3>
-                    <p>${formatDate(invoice.servicePeriodStart)} - ${formatDate(invoice.servicePeriodEnd)}</p>
-                    ${invoice.timesheets && invoice.timesheets.length > 0 ? '<p style="margin-top: 8px;">Detaillierte Aufschlüsselung siehe Anhang auf Seite 2.</p>' : ''}
-                </div>
-                ` : ''}
-
                 <div class="footer">
-                    <p><strong>Hasan Beker</strong> | Umgehungsstraße 1-3, 35043 Marburg</p>
-                    <p>IBAN: DE85513900000022791702 | BIC: VBMHDE5FXXX</p>
-                    <p style="margin-top: 10px;">
-                        <img src="${qrUrl}" alt="QR Code für Zahlung" style="width: 150px; height: 150px; margin-top: 10px;" />
-                    </p>
-                    <p style="margin-top: 5px; font-size: 11px;">Scannen Sie den QR-Code für schnelle Zahlung</p>
+                    <!-- Payment Instructions -->
+                    <div style="margin-bottom: 15px;">
+                        <p style="line-height: 1.4; font-size: 11px; color: #374151;">
+                            Bitte überweisen Sie den Gesamtbetrag innerhalb von 14 Tagen nach Erhalt der Rechnung unter Angabe Ihrer Rechnungsnummer.
+                        </p>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 30px; margin-bottom: 20px;">
+                        <!-- Left: QR Code -->
+                        <div>
+                            <img src="${qrUrl}" alt="QR Code" style="width: 120px; height: 120px; margin-bottom: 5px;" />
+                            <p style="font-size: 10px; color: #6b7280;">Scannen für Überweisung</p>
+                        </div>
+                        
+                        <!-- Center: Bank Info -->
+                        <div style="text-align: center;">
+                            <p style="font-weight: 600; margin-bottom: 6px; font-size: 12px; color: #6b7280;">Bankverbindung</p>
+                            <p style="margin-bottom: 2px; font-size: 12px; color: #6b7280;">Volksbank Mittelhessen</p>
+                            <p style="margin-bottom: 2px; font-size: 11px; color: #6b7280;">Kontoinhaber: Hasan Beker</p>
+                            <p style="margin-bottom: 2px; font-size: 11px; color: #6b7280;">IBAN: DE85 5139 0000 0022 7917 02</p>
+                            <p style="font-size: 11px; color: #6b7280;">BIC: VBMHDE5FXXX</p>
+                        </div>
+                        
+                        <!-- Right: Company Info -->
+                        <div style="text-align: right;">
+                            <p style="margin-bottom: 3px; font-size: 13px; color: #6b7280;">TechnAI Solutions</p>
+                            <p style="margin-bottom: 3px; font-size: 13px; color: #6b7280;">Hasan Beker</p>
+                            <p style="margin-bottom: 3px; font-size: 12px; color: #6b7280;">Steinweg 7</p>
+                            <p style="margin-bottom: 3px; font-size: 12px; color: #6b7280;">35423 Lich</p>
+                            <p style="margin-bottom: 3px; font-size: 11px; color: #6b7280;">Steuernummer: 020/805/35925</p>
+                            <p style="font-size: 11px; color: #6b7280;">Ust-IdNr.: DE458232218</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Bottom: Contact with Icons -->
+                    <div style="display: flex; justify-content: center; gap: 30px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 16px;">🌐</span>
+                            <a href="https://www.technai.io" style="color: #6366f1; text-decoration: none; font-size: 13px;">www.technai.io</a>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 16px;">✉️</span>
+                            <a href="mailto:info@technai.io" style="color: #6366f1; text-decoration: none; font-size: 13px;">info@technai.io</a>
+                        </div>
+                    </div>
                 </div>
             </div>
 
