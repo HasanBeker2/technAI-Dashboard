@@ -47,6 +47,10 @@ const statusTranslations: Record<string, string> = {
 }
 
 export function generateInvoicePDF(invoice: InvoiceForPDF): void {
+    console.log('Invoice data:', invoice)
+    console.log('Timesheets:', invoice.timesheets)
+    console.log('Has timesheets:', invoice.timesheets && invoice.timesheets.length > 0)
+
     // Create a new window for the printable invoice
     const printWindow = window.open('', '_blank')
     if (!printWindow) {
@@ -385,14 +389,20 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
                     </div>
                     
                     <!-- Bottom: Contact with Icons -->
-                    <div style="display: flex; justify-content: center; gap: 30px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <span style="font-size: 16px;">🌐</span>
-                            <a href="https://www.technai.io" style="color: #6366f1; text-decoration: none; font-size: 13px;">www.technai.io</a>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+                        <div style="flex: 1;"></div>
+                        <div style="display: flex; justify-content: center; gap: 30px; flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 16px;">🌐</span>
+                                <a href="https://www.technai.io" style="color: #6366f1; text-decoration: none; font-size: 13px;">www.technai.io</a>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 16px;">✉️</span>
+                                <a href="mailto:info@technai.io" style="color: #6366f1; text-decoration: none; font-size: 13px;">info@technai.io</a>
+                            </div>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <span style="font-size: 16px;">✉️</span>
-                            <a href="mailto:info@technai.io" style="color: #6366f1; text-decoration: none; font-size: 13px;">info@technai.io</a>
+                        <div style="flex: 1; text-align: right;">
+                            <span style="font-size: 11px; color: #6b7280;">Seite 1/2</span>
                         </div>
                     </div>
                 </div>
@@ -400,29 +410,50 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
 
             ${invoice.timesheets && invoice.timesheets.length > 0 ? `
             <div class="invoice-container" style="page-break-before: always;">
-                <h2 style="margin-bottom: 20px; color: #1f2937;">Anhang: Detaillierte Stundenaufschlüsselung</h2>
+                <!-- Page 2 Header -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #6366f1;">
+                    <div style="font-size: 24px; font-weight: bold; color: #6366f1;">TechnAI Solutions</div>
+                    <div style="text-align: right;">
+                        <h1 style="font-size: 28px; color: #1f2937; margin-bottom: 4px;">RECHNUNG</h1>
+                        <p style="color: #6b7280; font-size: 14px;">Nr. ${invoice.invoiceNumber}</p>
+                    </div>
+                </div>
+
+                <!-- Service Period -->
+                <div style="margin-bottom: 25px;">
+                    <p style="font-size: 14px; color: #374151;">
+                        <strong>Dienstleistungszeitraum:</strong> ${invoice.servicePeriodStart && invoice.servicePeriodEnd ? `${formatDate(invoice.servicePeriodStart)} – ${formatDate(invoice.servicePeriodEnd)}` : 'N/A'} (Leistungsnachweis)
+                    </p>
+                </div>
+
+                <!-- Timesheet Table -->
                 <table class="items-table">
                     <thead>
                         <tr>
                             <th>Datum</th>
-                            <th>Aufgabe</th>
+                            <th style="text-align: center;">Aufgabe</th>
                             <th style="text-align: right;">Stunden</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${invoice.timesheets.map(ts => `
                             <tr>
-                                <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${formatDate(ts.date)}</td>
-                                <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${ts.description || '-'}</td>
-                                <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;">${Number(ts.hours).toFixed(2)}h</td>
+                                <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 11px;">${formatDate(ts.date).split('.').slice(0, 2).join('.')}</td>
+                                <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 11px;">${ts.description || '-'}</td>
+                                <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right; font-size: 11px;">${Number(ts.hours)}</td>
                             </tr>
                         `).join('')}
-                        <tr>
-                            <td colspan="2" style="padding: 12px; font-weight: bold; text-align: right;">Gesamt:</td>
-                            <td style="padding: 12px; font-weight: bold; text-align: right;">${invoice.timesheets.reduce((sum, ts) => sum + Number(ts.hours), 0).toFixed(2)}h</td>
+                        <tr style="background: #f9fafb;">
+                            <td colspan="2" style="padding: 12px; font-weight: bold; text-align: right; border-top: 2px solid #6366f1;">Gesamt:</td>
+                            <td style="padding: 12px; font-weight: bold; text-align: right; border-top: 2px solid #6366f1;">${invoice.timesheets.reduce((sum, ts) => sum + Number(ts.hours), 0)}</td>
                         </tr>
                     </tbody>
                 </table>
+
+                <!-- Page 2 Footer -->
+                <div style="position: fixed; bottom: 40px; right: 40px;">
+                    <span style="font-size: 11px; color: #6b7280;">Seite 2/2</span>
+                </div>
             </div>
             ` : ''}
 
