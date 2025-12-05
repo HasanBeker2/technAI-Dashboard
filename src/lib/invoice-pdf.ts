@@ -51,16 +51,9 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
     console.log('Timesheets:', invoice.timesheets)
     console.log('Has timesheets:', invoice.timesheets && invoice.timesheets.length > 0)
 
-    // Create a new window for the printable invoice
-    const printWindow = window.open('', '_blank')
-    if (!printWindow) {
-        alert('Bitte erlauben Sie Popups um die Rechnung als PDF herunterzuladen')
-        return
-    }
-
-    // Set the document title immediately for better filename suggestion
+    // Set the document title logic for filename suggestion
+    // Note: We'll set this inside the generated HTML as well
     const filename = `Rechnung_${invoice.invoiceNumber}_${invoice.client.name.replace(/\s+/g, '_')}`
-    printWindow.document.title = filename
 
     const hasTimesheets = invoice.timesheets && invoice.timesheets.length > 0
     const totalPages = hasTimesheets ? 2 : 1
@@ -90,7 +83,6 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
     } catch (error) {
         console.error('Error parsing items:', error)
         alert('Fehler beim Laden der Rechnungspositionen')
-        printWindow.close()
         return
     }
 
@@ -123,10 +115,12 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
     // Use QR Server API
     const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(epcData)
 
+    // Generate HTML with embedded script to trigger print
     const html = `
         <!DOCTYPE html>
         <html lang="de">
         <head>
+            <meta charset="UTF-8">
             <title>${filename}</title>
             <style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -466,14 +460,7 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
 
             <script>
                 window.onload = function() {
-                    document.title = "${filename}";
-                    try {
-                        // Try to set a nicer URL than about:blank
-                        window.history.replaceState(null, "${filename}", "/rechnung-${invoice.invoiceNumber}");
-                    } catch (e) {
-                        console.log("Could not update URL", e);
-                    }
-                    
+                    // Slight delay to ensure everything is rendered
                     setTimeout(function() {
                         window.print();
                     }, 500);
@@ -483,6 +470,19 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
         </html>
     `
 
-    printWindow.document.write(html)
-    printWindow.document.close()
+    // Create a Blob from the HTML
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+    const pdfUrl = URL.createObjectURL(blob)
+
+    // Open the Blob URL in a new window
+    const printWindow = window.open(pdfUrl, '_blank')
+    if (!printWindow) {
+        alert('Bitte erlauben Sie Popups um die Rechnung als PDF herunterzuladen')
+        return
+    }
+
+    // Clean up the URL object after a reasonable time
+    setTimeout(() => {
+        URL.revokeObjectURL(pdfUrl)
+    }, 60000)
 }
