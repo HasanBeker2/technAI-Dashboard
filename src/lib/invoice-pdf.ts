@@ -58,6 +58,13 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
         return
     }
 
+    // Set the document title immediately for better filename suggestion
+    const filename = `Rechnung_${invoice.invoiceNumber}_${invoice.client.name.replace(/\s+/g, '_')}`
+    printWindow.document.title = filename
+
+    const hasTimesheets = invoice.timesheets && invoice.timesheets.length > 0
+    const totalPages = hasTimesheets ? 2 : 1
+
     // Format address: street on first line, postal code and city on second line
     const formatAddress = (address?: string) => {
         if (!address) return ''
@@ -120,7 +127,7 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
         <!DOCTYPE html>
         <html lang="de">
         <head>
-            <title>Rechnung_${invoice.invoiceNumber}_${invoice.client.name.replace(/\s+/g, '_')}</title>
+            <title>${filename}</title>
             <style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
                 body { 
@@ -402,7 +409,7 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
                             </div>
                         </div>
                         <div style="flex: 1; text-align: right;">
-                            <span style="font-size: 11px; color: #6b7280;">Seite 1/2</span>
+                            <span style="font-size: 11px; color: #6b7280;">Seite 1/${totalPages}</span>
                         </div>
                     </div>
                 </div>
@@ -451,14 +458,22 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
                 </table>
 
                 <!-- Page 2 Footer -->
-                <div style="position: fixed; bottom: 40px; right: 40px;">
-                    <span style="font-size: 11px; color: #6b7280;">Seite 2/2</span>
+                <div style="margin-top: 40px; padding-top: 15px; border-top: 1px solid #e5e7eb; text-align: right;">
+                    <span style="font-size: 11px; color: #6b7280;">Seite 2/${totalPages}</span>
                 </div>
             </div>
             ` : ''}
 
             <script>
                 window.onload = function() {
+                    document.title = "${filename}";
+                    try {
+                        // Try to set a nicer URL than about:blank
+                        window.history.replaceState(null, "${filename}", "/rechnung-${invoice.invoiceNumber}");
+                    } catch (e) {
+                        console.log("Could not update URL", e);
+                    }
+                    
                     setTimeout(function() {
                         window.print();
                     }, 500);
