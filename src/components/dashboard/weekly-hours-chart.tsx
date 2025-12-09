@@ -104,19 +104,6 @@ export function WeeklyHoursChart({ data, totalHours }: WeeklyHoursChartProps) {
                 </ResponsiveContainer>
             </div>
 
-            {/* Day labels with hours */}
-            <div className="mt-4 flex justify-between text-center">
-                {data.map((day) => (
-                    <div key={day.name} className="flex-1">
-                        <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                            {day.name}:
-                        </p>
-                        <p className="text-sm font-medium">
-                            {day.hours > 0 ? `${day.hours}h` : '-'}
-                        </p>
-                    </div>
-                ))}
-            </div>
         </div>
     )
 }
