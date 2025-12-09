@@ -61,6 +61,12 @@ export function StatCard({
             {variant === 'primary' && (
                 <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--primary)/0.05)] to-transparent" />
             )}
+            {variant === 'success' && (
+                <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--success)/0.05)] to-transparent" />
+            )}
+            {variant === 'warning' && (
+                <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--warning)/0.05)] to-transparent" />
+            )}
 
             <div className="relative flex items-start justify-between">
                 <div className="space-y-2">

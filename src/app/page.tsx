@@ -223,6 +223,7 @@ export default function DashboardPage() {
           value={data.summary.monthlyExpenses}
           subtitle="This month"
           icon={CreditCard}
+          variant="warning"
         />
         <StatCard
           title="Profit Calculation"
