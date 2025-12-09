@@ -87,7 +87,7 @@ model Timesheet {
 model Invoice {
   id            String        @id @default(cuid())
   invoiceNumber String        @unique
-  status        InvoiceStatus @default(DRAFT)
+  status        InvoiceStatus @default(PENDING)
   issueDate     DateTime      @db.Date
   dueDate       DateTime      @db.Date
   
@@ -125,6 +125,7 @@ model Invoice {
 
 enum InvoiceStatus {
   DRAFT
+  PENDING
   SENT
   PAID
   OVERDUE

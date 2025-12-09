@@ -134,6 +134,12 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
                     max-width: 800px;
                     margin: 0 auto;
                     padding: 40px;
+                    min-height: 100vh;
+                    display: flex;
+                    flex-direction: column;
+                }
+                .invoice-content {
+                    flex: 1;
                 }
                 .header {
                     display: flex;
@@ -295,6 +301,7 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
         </head>
         <body>
             <div class="invoice-container">
+                <div class="invoice-content">
                 <div class="header">
                     <div class="logo">TechnAI Solutions</div>
                     <div class="invoice-title">
@@ -354,7 +361,8 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
                 </div>
                 ` : ''}
 
-                <div class="footer">
+                </div>
+                <div class="footer" style="margin-top: auto;">
                     <!-- Payment Instructions -->
                     <div style="margin-bottom: 15px;">
                         <p style="line-height: 1.4; font-size: 11px; color: #374151;">
@@ -411,6 +419,7 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
 
             ${invoice.timesheets && invoice.timesheets.length > 0 ? `
             <div class="invoice-container" style="page-break-before: always;">
+                <div class="invoice-content">
                 <!-- Page 2 Header -->
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #6366f1;">
                     <div style="font-size: 24px; font-weight: bold; color: #6366f1;">TechnAI Solutions</div>
@@ -450,10 +459,61 @@ export function generateInvoicePDF(invoice: InvoiceForPDF): void {
                         </tr>
                     </tbody>
                 </table>
+                </div>
 
                 <!-- Page 2 Footer -->
-                <div style="margin-top: 40px; padding-top: 15px; border-top: 1px solid #e5e7eb; text-align: right;">
-                    <span style="font-size: 11px; color: #6b7280;">Seite 2/${totalPages}</span>
+                <div class="footer" style="margin-top: auto;">
+                    <!-- Payment Instructions -->
+                    <div style="margin-bottom: 15px;">
+                        <p style="line-height: 1.4; font-size: 11px; color: #374151;">
+                            Bitte überweisen Sie den Gesamtbetrag innerhalb von 14 Tagen nach Erhalt der Rechnung unter Angabe Ihrer Rechnungsnummer.
+                        </p>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 30px; margin-bottom: 20px;">
+                        <!-- Left: QR Code -->
+                        <div>
+                            <img src="${qrUrl}" alt="QR Code" style="width: 120px; height: 120px; margin-bottom: 5px;" />
+                            <p style="font-size: 10px; color: #6b7280;">Scannen für Überweisung</p>
+                        </div>
+                        
+                        <!-- Center: Bank Info -->
+                        <div style="text-align: center;">
+                            <p style="font-weight: 600; margin-bottom: 6px; font-size: 12px; color: #6b7280;">Bankverbindung</p>
+                            <p style="margin-bottom: 2px; font-size: 12px; color: #6b7280;">Volksbank Mittelhessen</p>
+                            <p style="margin-bottom: 2px; font-size: 11px; color: #6b7280;">Kontoinhaber: Hasan Beker</p>
+                            <p style="margin-bottom: 2px; font-size: 11px; color: #6b7280;">IBAN: DE85 5139 0000 0022 7917 02</p>
+                            <p style="font-size: 11px; color: #6b7280;">BIC: VBMHDE5FXXX</p>
+                        </div>
+                        
+                        <!-- Right: Company Info -->
+                        <div style="text-align: right;">
+                            <p style="margin-bottom: 3px; font-size: 13px; color: #6b7280;">TechnAI Solutions</p>
+                            <p style="margin-bottom: 3px; font-size: 13px; color: #6b7280;">Hasan Beker</p>
+                            <p style="margin-bottom: 3px; font-size: 12px; color: #6b7280;">Steinweg 7</p>
+                            <p style="margin-bottom: 3px; font-size: 12px; color: #6b7280;">35423 Lich</p>
+                            <p style="margin-bottom: 3px; font-size: 11px; color: #6b7280;">Steuernummer: 020/805/35925</p>
+                            <p style="font-size: 11px; color: #6b7280;">Ust-IdNr.: DE458232218</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Bottom: Contact with Icons -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+                        <div style="flex: 1;"></div>
+                        <div style="display: flex; justify-content: center; gap: 30px; flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 16px;">🌐</span>
+                                <a href="https://www.technai.io" style="color: #6366f1; text-decoration: none; font-size: 13px;">www.technai.io</a>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 16px;">✉️</span>
+                                <a href="mailto:info@technai.io" style="color: #6366f1; text-decoration: none; font-size: 13px;">info@technai.io</a>
+                            </div>
+                        </div>
+                        <div style="flex: 1; text-align: right;">
+                            <span style="font-size: 11px; color: #6b7280;">Seite 2/${totalPages}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
             ` : ''}

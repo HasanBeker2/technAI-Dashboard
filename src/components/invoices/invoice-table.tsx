@@ -8,7 +8,7 @@ import { Eye, Edit, Trash2, Download, MoreHorizontal } from 'lucide-react'
 interface Invoice {
     id: string
     invoiceNumber: string
-    status: 'DRAFT' | 'SENT' | 'PAID' | 'OVERDUE' | 'CANCELLED'
+    status: 'DRAFT' | 'PENDING' | 'SENT' | 'PAID' | 'OVERDUE' | 'CANCELLED'
     issueDate: string | Date
     dueDate: string | Date
     subtotal: number
@@ -30,6 +30,7 @@ interface InvoiceTableProps {
     onEdit?: (id: string) => void
     onDelete?: (id: string) => void
     onDownload?: (id: string) => void
+    onStatusChange?: (id: string, currentStatus: Invoice['status']) => void
 }
 
 const statusVariants: Record<
@@ -37,6 +38,7 @@ const statusVariants: Record<
     'default' | 'secondary' | 'success' | 'warning' | 'destructive'
 > = {
     DRAFT: 'secondary',
+    PENDING: 'warning',
     SENT: 'default',
     PAID: 'success',
     OVERDUE: 'destructive',
@@ -45,6 +47,7 @@ const statusVariants: Record<
 
 const statusLabels: Record<Invoice['status'], string> = {
     DRAFT: 'Draft',
+    PENDING: 'Pending',
     SENT: 'Sent',
     PAID: 'Paid',
     OVERDUE: 'Overdue',
@@ -57,7 +60,19 @@ export function InvoiceTable({
     onEdit,
     onDelete,
     onDownload,
+    onStatusChange,
 }: InvoiceTableProps) {
+    const handleStatusClick = (invoice: Invoice) => {
+        if (!onStatusChange) return
+        // Only allow progression for PENDING and SENT
+        if (invoice.status === 'PENDING' || invoice.status === 'SENT') {
+            onStatusChange(invoice.id, invoice.status)
+        }
+    }
+
+    const isStatusClickable = (status: Invoice['status']) => {
+        return status === 'PENDING' || status === 'SENT'
+    }
     if (invoices.length === 0) {
         return (
             <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-12 text-center">
@@ -130,7 +145,11 @@ export function InvoiceTable({
                                 <p className="text-sm">{formatDate(invoice.dueDate)}</p>
                             </td>
                             <td className="px-6 py-4">
-                                <Badge variant={statusVariants[invoice.status]}>
+                                <Badge
+                                    variant={statusVariants[invoice.status]}
+                                    className={isStatusClickable(invoice.status) && onStatusChange ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}
+                                    onClick={() => handleStatusClick(invoice)}
+                                >
                                     {statusLabels[invoice.status]}
                                 </Badge>
                             </td>

@@ -14,7 +14,7 @@ import { generateInvoicePDF } from '@/lib/invoice-pdf'
 interface Invoice {
     id: string
     invoiceNumber: string
-    status: 'DRAFT' | 'SENT' | 'PAID' | 'OVERDUE' | 'CANCELLED'
+    status: 'DRAFT' | 'PENDING' | 'SENT' | 'PAID' | 'OVERDUE' | 'CANCELLED'
     issueDate: string
     dueDate: string
     subtotal: number
@@ -119,7 +119,7 @@ export default function InvoicesPage() {
         items: { description: string; quantity: number; rate: number; amount: number }[]
         vatRate: number
         notes?: string
-        status: 'DRAFT' | 'SENT'
+        status: 'PENDING'
         servicePeriodStart?: string
         servicePeriodEnd?: string
     }) => {
@@ -183,6 +183,23 @@ export default function InvoicesPage() {
         }
     }
 
+    const handleStatusChange = async (id: string, currentStatus: Invoice['status']) => {
+        try {
+            const res = await fetch(`/api/invoices/${id}/status`, {
+                method: 'PATCH',
+            })
+            if (res.ok) {
+                fetchInvoices()
+            } else {
+                const error = await res.json()
+                alert(`Error: ${error.error || 'Failed to update invoice status'}`)
+            }
+        } catch (error) {
+            console.error('Error updating invoice status:', error)
+            alert('Failed to update invoice status')
+        }
+    }
+
     const handleViewInvoice = async (id: string) => {
         try {
             const res = await fetch(`/api/invoices/${id}`)
@@ -230,7 +247,7 @@ export default function InvoicesPage() {
     }
 
     const totalPending = invoices
-        .filter((inv) => inv.status === 'SENT' || inv.status === 'OVERDUE')
+        .filter((inv) => inv.status === 'PENDING' || inv.status === 'SENT' || inv.status === 'OVERDUE')
         .reduce((sum, inv) => sum + Number(inv.total), 0)
 
     const totalPaid = invoices
@@ -284,6 +301,7 @@ export default function InvoicesPage() {
                 >
                     <option value="all">All Status</option>
                     <option value="DRAFT">Draft</option>
+                    <option value="PENDING">Pending</option>
                     <option value="SENT">Sent</option>
                     <option value="PAID">Paid</option>
                     <option value="OVERDUE">Overdue</option>
@@ -352,6 +370,7 @@ export default function InvoicesPage() {
                         }
                     }}
                     onDownload={handleDownloadInvoice}
+                    onStatusChange={handleStatusChange}
                 />
             )}
 

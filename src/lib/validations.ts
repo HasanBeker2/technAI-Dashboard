@@ -45,7 +45,7 @@ export type CreateTimesheetInput = z.infer<typeof createTimesheetSchema>
 export type UpdateTimesheetInput = z.infer<typeof updateTimesheetSchema>
 
 // ==================== Invoice Schemas ====================
-export const invoiceStatusSchema = z.enum(['DRAFT', 'SENT', 'PAID', 'OVERDUE', 'CANCELLED'])
+export const invoiceStatusSchema = z.enum(['DRAFT', 'PENDING', 'SENT', 'PAID', 'OVERDUE', 'CANCELLED'])
 
 export const invoiceItemSchema = z.object({
     description: z.string().min(1, 'Description is required'),
@@ -62,7 +62,7 @@ export const createInvoiceSchema = z.object({
     items: z.array(invoiceItemSchema).min(1, 'At least one item is required'),
     vatRate: z.number().min(0).max(100).optional().default(19),
     notes: z.string().optional(),
-    status: invoiceStatusSchema.optional().default('DRAFT'),
+    status: invoiceStatusSchema.optional().default('PENDING'),
     servicePeriodStart: z.string().or(z.date()).transform((val) => new Date(val)).optional(),
     servicePeriodEnd: z.string().or(z.date()).transform((val) => new Date(val)).optional(),
 }).refine(

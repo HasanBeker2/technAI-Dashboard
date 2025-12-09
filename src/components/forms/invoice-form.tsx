@@ -31,7 +31,7 @@ interface InvoiceFormProps {
         items: InvoiceItem[]
         vatRate: number
         notes?: string
-        status: 'DRAFT' | 'SENT'
+        status: 'PENDING'
         servicePeriodStart?: string
         servicePeriodEnd?: string
     }) => void
@@ -173,7 +173,7 @@ export function InvoiceForm({
     const vatAmount = subtotal * (parseFloat(formData.vatRate) / 100)
     const total = subtotal + vatAmount
 
-    const handleSubmit = (e: React.FormEvent, status: 'DRAFT' | 'SENT') => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
         onSubmit({
             clientId: formData.clientId,
@@ -183,7 +183,7 @@ export function InvoiceForm({
             items: items.filter(item => item.description && item.amount > 0),
             vatRate: parseFloat(formData.vatRate),
             notes: formData.notes || undefined,
-            status,
+            status: 'PENDING',
             servicePeriodStart: formData.servicePeriodStart || undefined,
             servicePeriodEnd: formData.servicePeriodEnd || undefined,
         })
@@ -206,7 +206,7 @@ export function InvoiceForm({
                     </button>
                 </div>
 
-                <form onSubmit={(e) => handleSubmit(e, 'DRAFT')} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Client & Project */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -411,15 +411,8 @@ export function InvoiceForm({
                         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
                             Cancel
                         </Button>
-                        <Button type="submit" variant="outline" className="flex-1">
-                            Save as Draft
-                        </Button>
-                        <Button
-                            type="button"
-                            onClick={(e) => handleSubmit(e as unknown as React.FormEvent, 'SENT')}
-                            className="flex-1"
-                        >
-                            Send Invoice
+                        <Button type="submit" className="flex-1">
+                            Save Invoice
                         </Button>
                     </div>
                 </form>
