@@ -61,21 +61,43 @@ export function WeeklyHoursChart({ data, totalHours }: WeeklyHoursChartProps) {
                             tickFormatter={(value) => `${value}h`}
                         />
                         <Tooltip
-                            contentStyle={{
-                                backgroundColor: 'hsl(222, 47%, 8%)',
-                                border: '1px solid hsl(217, 33%, 17%)',
-                                borderRadius: '8px',
-                                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+                            cursor={false}
+                            content={({ active, payload }) => {
+                                if (!active || !payload || !payload.length) return null
+                                const data = payload[0]
+                                return (
+                                    <div
+                                        style={{
+                                            backgroundColor: 'hsl(222, 47%, 11%)',
+                                            border: '1px solid hsl(217, 33%, 17%)',
+                                            borderRadius: '8px',
+                                            padding: '8px 12px',
+                                            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+                                        }}
+                                    >
+                                        <p style={{ color: 'hsl(210, 40%, 98%)', fontSize: '12px', marginBottom: '4px' }}>
+                                            {data.payload.name}
+                                        </p>
+                                        <p style={{ color: 'hsl(180, 100%, 50%)', fontSize: '14px', fontWeight: 'bold' }}>
+                                            {data.value}h
+                                        </p>
+                                    </div>
+                                )
                             }}
-                            labelStyle={{ color: 'hsl(210, 40%, 98%)' }}
-                            formatter={(value: number) => [`${value}h`, 'Hours']}
                         />
-                        <Bar dataKey="hours" radius={[6, 6, 0, 0]} maxBarSize={50}>
+                        <Bar
+                            dataKey="hours"
+                            radius={[6, 6, 0, 0]}
+                            maxBarSize={50}
+                            activeBar={{ opacity: 0.8 }}
+                        >
                             {data.map((entry, index) => (
-                                <Cell
-                                    key={`cell-${index}`}
-                                    fill={entry.hours > 0 ? 'url(#barGradient)' : 'hsl(217, 33%, 17%)'}
-                                />
+                                entry.hours > 0 ? (
+                                    <Cell
+                                        key={`cell-${index}`}
+                                        fill="url(#barGradient)"
+                                    />
+                                ) : null
                             ))}
                         </Bar>
                     </BarChart>

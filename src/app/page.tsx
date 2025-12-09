@@ -44,7 +44,7 @@ interface DashboardData {
   }[]
   weeklyHours: {
     totalHours: number
-    dailyBreakdown: { date: string; dayName: string; hours: number }[]
+    dailyBreakdown: { date: string; name: string; hours: number }[]
   }
 }
 
@@ -123,7 +123,7 @@ export default function DashboardPage() {
         const dayHours = timesheets
           .filter((ts: { date: string }) => ts.date.split('T')[0] === dateStr)
           .reduce((sum: number, ts: { hours: number }) => sum + Number(ts.hours), 0)
-        return { date: dateStr, dayName, hours: dayHours }
+        return { date: dateStr, name: dayName, hours: dayHours }
       })
 
       const totalWeekHours = dailyBreakdown.reduce((sum, d) => sum + d.hours, 0)
