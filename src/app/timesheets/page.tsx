@@ -106,10 +106,20 @@ export default function TimesheetsPage() {
         0
     )
 
-    const totalEarnings = timesheets.reduce(
-        (sum, ts) => sum + Number(ts.hours) * Number(ts.project.hourlyRate),
+    const totalEarnings = weekDates.reduce(
+        (sum, d) => {
+            const dayEarnings = timesheets
+                .filter((ts) => ts.date.split('T')[0] === d.date)
+                .reduce((daySum, ts) => daySum + Number(ts.hours) * Number(ts.project.hourlyRate), 0)
+            return sum + dayEarnings
+        },
         0
     )
+
+    // Filter timesheets to only show entries from current week
+    const weekDatesSet = new Set(weekDates.map(d => d.date))
+    const weekTimesheets = timesheets.filter(ts => weekDatesSet.has(ts.date.split('T')[0]))
+
 
     const navigateWeek = (direction: 'prev' | 'next') => {
         const newDate = new Date(currentWeekStart)
@@ -252,8 +262,8 @@ export default function TimesheetsPage() {
                         <div
                             key={d.date}
                             className={`rounded-xl border p-4 text-center transition-all ${d.isToday
-                                    ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.1)]'
-                                    : 'border-[hsl(var(--border))] bg-[hsl(var(--card))]'
+                                ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.1)]'
+                                : 'border-[hsl(var(--border))] bg-[hsl(var(--card))]'
                                 }`}
                         >
                             <p className="text-sm font-medium text-[hsl(var(--muted-foreground))]">
@@ -278,7 +288,7 @@ export default function TimesheetsPage() {
                 </div>
                 <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4">
                     <p className="text-sm text-[hsl(var(--muted-foreground))]">Entries</p>
-                    <p className="text-2xl font-bold">{timesheets.length}</p>
+                    <p className="text-2xl font-bold">{weekTimesheets.length}</p>
                 </div>
                 <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4">
                     <p className="text-sm text-[hsl(var(--muted-foreground))]">Earnings</p>
@@ -289,7 +299,7 @@ export default function TimesheetsPage() {
             </div>
 
             {/* Recent Entries or Empty State */}
-            {timesheets.length === 0 ? (
+            {weekTimesheets.length === 0 ? (
                 <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-12 text-center">
                     <div className="mx-auto w-16 h-16 rounded-full bg-[hsl(var(--primary)/0.1)] flex items-center justify-center mb-4">
                         <Clock className="h-8 w-8 text-[hsl(var(--primary))]" />
@@ -309,7 +319,7 @@ export default function TimesheetsPage() {
                         <h3 className="font-semibold">Recent Entries</h3>
                     </div>
                     <div className="divide-y divide-[hsl(var(--border))]">
-                        {timesheets.map((entry) => (
+                        {weekTimesheets.map((entry) => (
                             <div
                                 key={entry.id}
                                 className="group flex items-center justify-between p-4 hover:bg-[hsl(var(--secondary)/0.3)] transition-colors"
