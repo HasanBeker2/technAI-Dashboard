@@ -14,9 +14,8 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Validate file type (PDF support temporarily disabled)
+        // Validate file type - images only
         const allowedTypes = [
-            // 'application/pdf', // Disabled until PDF-to-image conversion is implemented
             'image/jpeg',
             'image/jpg',
             'image/png',
@@ -25,7 +24,7 @@ export async function POST(request: NextRequest) {
 
         if (!allowedTypes.includes(file.type)) {
             return NextResponse.json(
-                { error: 'Invalid file type. Please upload an image file (JPG, PNG, WEBP). PDF support coming soon.' },
+                { error: 'Invalid file type. Please upload an image file (JPG, PNG, WEBP).' },
                 { status: 400 }
             )
         }

@@ -42,10 +42,10 @@ export function ExpenseAIUploadForm({ onSubmit, onCancel }: AIUploadFormProps) {
     }, [])
 
     const handleFileSelect = async (selectedFile: File) => {
-        // Validate file type (match backend validation)
+        // Validate file type (images only)
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
         if (!allowedTypes.includes(selectedFile.type)) {
-            setError('Invalid file type. Please upload an image file (JPG, PNG, WEBP). PDF support coming soon.')
+            setError('Invalid file type. Please upload an image file (JPG, PNG, WEBP).')
             return
         }
 
@@ -201,8 +201,6 @@ export function ExpenseAIUploadForm({ onSubmit, onCancel }: AIUploadFormProps) {
                         />
                         <p className="mt-4 text-xs text-[hsl(var(--muted-foreground))]">
                             JPG, PNG, WEBP (Max. 10MB)
-                            <br />
-                            <span className="text-yellow-500">Note: PDF support coming soon - please upload image files</span>
                         </p>
                     </div>
                 )}
