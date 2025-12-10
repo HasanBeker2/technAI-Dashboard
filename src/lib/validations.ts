@@ -112,20 +112,66 @@ export const expenseCategorySchema = z.enum([
     'OTHER',
 ])
 
-export const createExpenseSchema = z.object({
-    category: expenseCategorySchema,
+export const paymentMethodSchema = z.enum([
+    'BANK_TRANSFER',
+    'CREDIT_CARD',
+    'DEBIT_CARD',
+    'CASH',
+    'PAYPAL',
+    'OTHER',
+])
+
+const expenseBaseSchema = z.object({
+    // Vendor Information
+    vendorName: z.string().min(1, 'Vendor name is required'),
+    vendorAddress: z.string().optional(),
+
+    // Invoice Details
+    invoiceNumber: z.string().optional(),
+    invoiceDate: z.string().or(z.date()).transform((val) => new Date(val)),
     description: z.string().min(1, 'Description is required'),
+
+    // Financial Information
+    category: expenseCategorySchema,
     amount: z.number().positive('Amount must be positive'),
+    vatRate: z.number().min(0).max(100).optional(),
     vatAmount: z.number().nonnegative().optional(),
+    currency: z.string().optional().default('EUR'),
+
+    // Payment Information
+    paymentDate: z.string().or(z.date()).transform((val) => new Date(val)).optional(),
+    paymentMethod: paymentMethodSchema.optional(),
+
+    // Document Storage (Google Drive)
+    driveFileId: z.string().optional(),
+    driveUrl: z.string().url().optional().or(z.literal('')),
+    driveFileName: z.string().optional(),
+
+    // Additional Information
+    notes: z.string().optional(),
+
+    // Legacy field for backward compatibility
     date: z.string().or(z.date()).transform((val) => new Date(val)),
     receiptUrl: z.string().url().optional().or(z.literal('')),
 })
 
-export const updateExpenseSchema = createExpenseSchema.partial()
+export const createExpenseSchema = expenseBaseSchema.refine(
+    (data) => {
+        // If payment date is provided, it should be after or equal to invoice date
+        if (data.paymentDate && data.invoiceDate) {
+            return data.paymentDate >= data.invoiceDate
+        }
+        return true
+    },
+    { message: 'Payment date must be after or equal to invoice date' }
+)
+
+export const updateExpenseSchema = expenseBaseSchema.partial()
 
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>
 export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>
 export type ExpenseCategory = z.infer<typeof expenseCategorySchema>
+export type PaymentMethod = z.infer<typeof paymentMethodSchema>
 
 // ==================== Query Schemas ====================
 export const dateRangeSchema = z.object({

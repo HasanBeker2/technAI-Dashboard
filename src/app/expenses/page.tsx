@@ -4,30 +4,13 @@ import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ExpenseForm } from '@/components/forms/expense-form'
+import { ExpenseAIUploadForm } from '@/components/forms/expense-ai-upload-form'
+import { ExpenseEntryMethodDialog } from '@/components/forms/expense-entry-method-dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { Plus, Search, Trash2, Edit, Receipt } from 'lucide-react'
+import { Plus, Search, Trash2, Edit, Receipt, ExternalLink, FileText } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
-
-type ExpenseCategory =
-    | 'SOFTWARE'
-    | 'HARDWARE'
-    | 'OFFICE'
-    | 'TRAVEL'
-    | 'MARKETING'
-    | 'UTILITIES'
-    | 'PROFESSIONAL_SERVICES'
-    | 'OTHER'
-
-const categoryLabels: Record<ExpenseCategory, string> = {
-    SOFTWARE: 'Software',
-    HARDWARE: 'Hardware',
-    OFFICE: 'Office',
-    TRAVEL: 'Travel',
-    MARKETING: 'Marketing',
-    UTILITIES: 'Utilities',
-    PROFESSIONAL_SERVICES: 'Professional Services',
-    OTHER: 'Other',
-}
+import { categoryGermanLabels, paymentMethodLabels } from '@/lib/expense-utils'
+import type { ExpenseCategory, PaymentMethod } from '@/lib/validations'
 
 const categoryColors: Record<ExpenseCategory, string> = {
     SOFTWARE: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
@@ -42,10 +25,22 @@ const categoryColors: Record<ExpenseCategory, string> = {
 
 interface Expense {
     id: string
-    category: ExpenseCategory
+    vendorName: string
+    vendorAddress?: string | null
+    invoiceNumber?: string | null
+    invoiceDate: string
     description: string
+    category: ExpenseCategory
     amount: number
-    vatAmount: number | null
+    vatRate?: number | null
+    vatAmount?: number | null
+    currency: string
+    paymentDate?: string | null
+    paymentMethod?: PaymentMethod | null
+    driveFileId?: string | null
+    driveUrl?: string | null
+    driveFileName?: string | null
+    notes?: string | null
     date: string
 }
 
@@ -56,7 +51,9 @@ export default function ExpensesPage() {
     const [categoryFilter, setCategoryFilter] = useState<string>('all')
 
     // Modal states
-    const [showExpenseForm, setShowExpenseForm] = useState(false)
+    const [showMethodDialog, setShowMethodDialog] = useState(false)
+    const [showManualForm, setShowManualForm] = useState(false)
+    const [showAIForm, setShowAIForm] = useState(false)
     const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
     const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -80,21 +77,15 @@ export default function ExpensesPage() {
     }, [fetchExpenses])
 
     const filteredExpenses = expenses.filter((expense) => {
-        const matchesSearch = expense.description
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase())
+        const matchesSearch =
+            expense.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            expense.vendorName.toLowerCase().includes(searchQuery.toLowerCase())
         const matchesCategory =
             categoryFilter === 'all' || expense.category === categoryFilter
         return matchesSearch && matchesCategory
     })
 
-    const handleCreateExpense = async (data: {
-        category: ExpenseCategory
-        description: string
-        amount: number
-        vatAmount?: number
-        date: string
-    }) => {
+    const handleCreateExpense = async (data: any) => {
         try {
             const res = await fetch('/api/expenses', {
                 method: 'POST',
@@ -102,7 +93,8 @@ export default function ExpensesPage() {
                 body: JSON.stringify(data),
             })
             if (res.ok) {
-                setShowExpenseForm(false)
+                setShowManualForm(false)
+                setShowAIForm(false)
                 fetchExpenses()
             } else {
                 const error = await res.json()
@@ -114,13 +106,7 @@ export default function ExpensesPage() {
         }
     }
 
-    const handleUpdateExpense = async (data: {
-        category: ExpenseCategory
-        description: string
-        amount: number
-        vatAmount?: number
-        date: string
-    }) => {
+    const handleUpdateExpense = async (data: any) => {
         if (!editingExpense) return
         try {
             const res = await fetch(`/api/expenses/${editingExpense.id}`, {
@@ -164,7 +150,10 @@ export default function ExpensesPage() {
     }
 
     const totalExpenses = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0)
-    const totalVat = expenses.reduce((sum, exp) => sum + (exp.vatAmount ? Number(exp.vatAmount) : 0), 0)
+    const totalVat = expenses.reduce(
+        (sum, exp) => sum + (exp.vatAmount ? Number(exp.vatAmount) : 0),
+        0
+    )
 
     // Group by category for summary
     const byCategory = expenses.reduce<Record<string, number>>((acc, exp) => {
@@ -187,10 +176,10 @@ export default function ExpensesPage() {
                 <div>
                     <h1 className="text-3xl font-bold">Expenses</h1>
                     <p className="mt-1 text-[hsl(var(--muted-foreground))]">
-                        Track and manage your business expenses.
+                        Track and manage your business expenses
                     </p>
                 </div>
-                <Button onClick={() => setShowExpenseForm(true)}>
+                <Button onClick={() => setShowMethodDialog(true)}>
                     <Plus className="h-4 w-4" />
                     Add Expense
                 </Button>
@@ -201,7 +190,7 @@ export default function ExpensesPage() {
                 <div className="relative flex-1 max-w-md">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[hsl(var(--muted-foreground))]" />
                     <Input
-                        placeholder="Search expenses..."
+                        placeholder="Search expenses or company..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="pl-10"
@@ -213,7 +202,7 @@ export default function ExpensesPage() {
                     className="h-10 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 text-sm focus:border-[hsl(var(--primary))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.5)]"
                 >
                     <option value="all">All Categories</option>
-                    {Object.entries(categoryLabels).map(([value, label]) => (
+                    {Object.entries(categoryGermanLabels).map(([value, label]) => (
                         <option key={value} value={value}>
                             {label}
                         </option>
@@ -230,20 +219,18 @@ export default function ExpensesPage() {
                     </p>
                 </div>
                 <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4">
-                    <p className="text-sm text-[hsl(var(--muted-foreground))]">VAT Deductible</p>
+                    <p className="text-sm text-[hsl(var(--muted-foreground))]">Deductible VAT</p>
                     <p className="text-2xl font-bold text-[hsl(var(--primary))]">
                         {formatCurrency(totalVat)}
                     </p>
                 </div>
                 <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4">
                     <p className="text-sm text-[hsl(var(--muted-foreground))]">Net Amount</p>
-                    <p className="text-2xl font-bold">
-                        {formatCurrency(totalExpenses - totalVat)}
-                    </p>
+                    <p className="text-2xl font-bold">{formatCurrency(totalExpenses - totalVat)}</p>
                 </div>
                 <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4">
                     <p className="text-sm text-[hsl(var(--muted-foreground))]">This Month</p>
-                    <p className="text-2xl font-bold">{expenses.length} entries</p>
+                    <p className="text-2xl font-bold">{expenses.length} records</p>
                 </div>
             </div>
 
@@ -257,8 +244,11 @@ export default function ExpensesPage() {
                                 key={category}
                                 className="flex items-center justify-between rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--secondary)/0.3)] p-3"
                             >
-                                <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${categoryColors[category as ExpenseCategory]}`}>
-                                    {categoryLabels[category as ExpenseCategory]}
+                                <span
+                                    className={`rounded-full border px-2 py-0.5 text-xs font-medium ${categoryColors[category as ExpenseCategory]
+                                        }`}
+                                >
+                                    {categoryGermanLabels[category as ExpenseCategory]}
                                 </span>
                                 <span className="font-semibold">{formatCurrency(amount)}</span>
                             </div>
@@ -275,9 +265,9 @@ export default function ExpensesPage() {
                     </div>
                     <h3 className="text-lg font-semibold mb-2">No expenses yet</h3>
                     <p className="text-[hsl(var(--muted-foreground))] mb-4">
-                        Start tracking your business expenses for tax deductions.
+                        Start recording your business expenses for tax deductions
                     </p>
-                    <Button onClick={() => setShowExpenseForm(true)}>
+                    <Button onClick={() => setShowMethodDialog(true)}>
                         <Plus className="h-4 w-4" />
                         Add Expense
                     </Button>
@@ -291,6 +281,9 @@ export default function ExpensesPage() {
                                     Date
                                 </th>
                                 <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
+                                    Company
+                                </th>
+                                <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
                                     Category
                                 </th>
                                 <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
@@ -301,6 +294,9 @@ export default function ExpensesPage() {
                                 </th>
                                 <th className="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
                                     VAT
+                                </th>
+                                <th className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
+                                    Document
                                 </th>
                                 <th className="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
                                     Actions
@@ -315,21 +311,55 @@ export default function ExpensesPage() {
                                         }`}
                                 >
                                     <td className="px-6 py-4 text-sm">
-                                        {formatDate(expense.date)}
+                                        {formatDate(expense.invoiceDate)}
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${categoryColors[expense.category]}`}>
-                                            {categoryLabels[expense.category]}
+                                        <p className="font-medium">{expense.vendorName}</p>
+                                        {expense.invoiceNumber && (
+                                            <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                                                {expense.invoiceNumber}
+                                            </p>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span
+                                            className={`rounded-full border px-2 py-0.5 text-xs font-medium ${categoryColors[expense.category]
+                                                }`}
+                                        >
+                                            {categoryGermanLabels[expense.category]}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4">
                                         <p className="font-medium">{expense.description}</p>
+                                        {expense.paymentMethod && (
+                                            <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                                                {paymentMethodLabels[expense.paymentMethod]}
+                                            </p>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4 text-right font-semibold">
                                         {formatCurrency(Number(expense.amount))}
                                     </td>
                                     <td className="px-6 py-4 text-right text-sm text-[hsl(var(--muted-foreground))]">
-                                        {formatCurrency(expense.vatAmount ? Number(expense.vatAmount) : 0)}
+                                        {formatCurrency(
+                                            expense.vatAmount ? Number(expense.vatAmount) : 0
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        {expense.driveUrl ? (
+                                            <a
+                                                href={expense.driveUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1 text-[hsl(var(--primary))] hover:underline"
+                                                title={expense.driveFileName || 'View Document'}
+                                            >
+                                                <FileText className="h-4 w-4" />
+                                                <ExternalLink className="h-3 w-3" />
+                                            </a>
+                                        ) : (
+                                            <span className="text-[hsl(var(--muted-foreground))]">-</span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -356,21 +386,50 @@ export default function ExpensesPage() {
                 </div>
             )}
 
-            {/* Expense Form Modal */}
-            {(showExpenseForm || editingExpense) && (
+            {/* Entry Method Selection Dialog */}
+            {showMethodDialog && (
+                <ExpenseEntryMethodDialog
+                    onSelectMethod={(method) => {
+                        setShowMethodDialog(false)
+                        if (method === 'manual') {
+                            setShowManualForm(true)
+                        } else {
+                            setShowAIForm(true)
+                        }
+                    }}
+                    onCancel={() => setShowMethodDialog(false)}
+                />
+            )}
+
+            {/* Manual Entry Form */}
+            {(showManualForm || editingExpense) && (
                 <ExpenseForm
                     onSubmit={editingExpense ? handleUpdateExpense : handleCreateExpense}
                     onCancel={() => {
-                        setShowExpenseForm(false)
+                        setShowManualForm(false)
                         setEditingExpense(null)
                     }}
                     initialData={
                         editingExpense
                             ? {
-                                category: editingExpense.category,
+                                vendorName: editingExpense.vendorName,
+                                vendorAddress: editingExpense.vendorAddress || undefined,
+                                invoiceNumber: editingExpense.invoiceNumber || undefined,
+                                invoiceDate: editingExpense.invoiceDate.split('T')[0],
                                 description: editingExpense.description,
-                                amount: Number(editingExpense.amount),
-                                vatAmount: editingExpense.vatAmount ? Number(editingExpense.vatAmount) : undefined,
+                                category: editingExpense.category,
+                                amount: String(editingExpense.amount),
+                                vatRate: editingExpense.vatRate
+                                    ? String(editingExpense.vatRate)
+                                    : '19',
+                                vatAmount: editingExpense.vatAmount
+                                    ? String(editingExpense.vatAmount)
+                                    : '',
+                                currency: editingExpense.currency,
+                                paymentDate: editingExpense.paymentDate?.split('T')[0],
+                                paymentMethod: editingExpense.paymentMethod || undefined,
+                                driveUrl: editingExpense.driveUrl || undefined,
+                                notes: editingExpense.notes || undefined,
                                 date: editingExpense.date.split('T')[0],
                             }
                             : undefined
@@ -378,11 +437,19 @@ export default function ExpensesPage() {
                 />
             )}
 
+            {/* AI Upload Form */}
+            {showAIForm && (
+                <ExpenseAIUploadForm
+                    onSubmit={handleCreateExpense}
+                    onCancel={() => setShowAIForm(false)}
+                />
+            )}
+
             {/* Delete Confirmation Dialog */}
             {deleteTarget && (
                 <ConfirmDialog
                     title="Delete Expense"
-                    message={`Are you sure you want to delete "${deleteTarget.description}"? This action cannot be undone.`}
+                    message={`Are you sure you want to delete the expense "${deleteTarget.description}"? This action cannot be undone.`}
                     confirmText="Delete"
                     cancelText="Cancel"
                     variant="danger"

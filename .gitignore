@@ -12,6 +12,10 @@ dist/
 .env.test.local
 .env.production.local
 
+# Google Drive API credentials
+google-credentials.json
+service-account-key.json
+
 # IDE
 .vscode/
 .idea/

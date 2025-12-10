@@ -79,10 +79,35 @@ export async function POST(request: NextRequest) {
 
         const expense = await prisma.expense.create({
             data: {
-                category: validatedData.category,
+                // Vendor Information
+                vendorName: validatedData.vendorName,
+                vendorAddress: validatedData.vendorAddress || null,
+
+                // Invoice Details
+                invoiceNumber: validatedData.invoiceNumber || null,
+                invoiceDate: validatedData.invoiceDate,
                 description: validatedData.description,
+
+                // Financial Information
+                category: validatedData.category,
                 amount: validatedData.amount,
+                vatRate: validatedData.vatRate || null,
                 vatAmount: validatedData.vatAmount || null,
+                currency: validatedData.currency || 'EUR',
+
+                // Payment Information
+                paymentDate: validatedData.paymentDate || null,
+                paymentMethod: validatedData.paymentMethod || null,
+
+                // Document Storage (Google Drive)
+                driveFileId: validatedData.driveFileId || null,
+                driveUrl: validatedData.driveUrl || null,
+                driveFileName: validatedData.driveFileName || null,
+
+                // Additional Information
+                notes: validatedData.notes || null,
+
+                // Legacy fields for backward compatibility
                 date: validatedData.date,
                 receiptUrl: validatedData.receiptUrl || null,
             },
